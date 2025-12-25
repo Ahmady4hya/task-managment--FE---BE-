@@ -16,7 +16,6 @@ import java.util.List;
 @RestController
 @RequestMapping(DeveloperApiPaths.BASE)
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:4200")
 public class DeveloperController {
 
     private final DeveloperService developerService;

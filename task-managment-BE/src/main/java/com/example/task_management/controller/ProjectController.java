@@ -18,7 +18,6 @@ import java.util.List;
 @RestController
 @RequestMapping(ProjectApiPaths.BASE)
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:4200")
 public class ProjectController {
 
     private final ProjectService projectService;
