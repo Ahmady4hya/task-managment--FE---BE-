@@ -2,22 +2,22 @@
   <div class="form-header">
     <h1 class="form-title">{{ pageTitle }}</h1>
     <p class="form-subtitle">
-      {{ isEditMode ? 'Update project information' : 'Fill in the details to create a new project' }}
+      {{ isEditMode() ? 'Update project information' : 'Fill in the details to create a new project' }}
     </p>
   </div>
 
-  @if (loading) {
+  @if (projectRes.isLoading()) {
     <app-spinner size="medium" message="Loading project..."></app-spinner>
   }
 
-  @if (error && !loading) {
+  @if (error() && !projectRes.isLoading()) {
     <div class="error-container">
       <div class="error-icon">⚠️</div>
-      <p class="error-message">{{ error }}</p>
+      <p class="error-message">{{ error() }}</p>
     </div>
   }
 
-  @if (!loading) {
+  @if (!projectRes.isLoading()) {
     <form [formGroup]="projectForm" (ngSubmit)="onSubmit()" class="project-form">
       <div class="form-group">
         <label for="name" class="form-label">
@@ -28,17 +28,17 @@
           id="name"
           formControlName="name"
           class="form-input"
-          [class.invalid]="nameControl?.invalid && nameControl?.touched"
+          [class.invalid]="projectForm.get('name')?.invalid && projectForm.get('name')?.touched"
           placeholder="Enter project name"
         />
-        @if (nameControl?.invalid && nameControl?.touched) {
+        @if (projectForm.get('name')?.invalid && projectForm.get('name')?.touched) {
           <div class="error-messages">
-            @if (nameControl?.errors?.['required']) {
+            @if (projectForm.get('name')?.errors?.['required']) {
               <p class="error-text">
                 Project name is required
               </p>
             }
-            @if (nameControl?.errors?.['minlength']) {
+            @if (projectForm.get('name')?.errors?.['minlength']) {
               <p class="error-text">
                 Project name must be at least 3 characters
               </p>
@@ -66,19 +66,19 @@
           type="button"
           class="btn-cancel"
           (click)="onCancel()"
-          [disabled]="submitting"
+          [disabled]="submitting()"
         >
           Cancel
         </button>
         <button
           type="submit"
           class="btn-submit"
-          [disabled]="projectForm.invalid || submitting"
+          [disabled]="projectForm.invalid || submitting()"
         >
-          @if (!submitting) {
-            <span class="btn-icon">{{ isEditMode ? '💾' : '➕' }}</span>
+          @if (!submitting()) {
+            <span class="btn-icon">{{ isEditMode() ? '💾' : '➕' }}</span>
           }
-          @if (submitting) {
+          @if (submitting()) {
             <span class="spinner-small"></span>
           }
           {{ submitButtonText }}
