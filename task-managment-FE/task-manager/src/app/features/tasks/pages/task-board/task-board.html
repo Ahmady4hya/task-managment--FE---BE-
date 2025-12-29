@@ -7,22 +7,22 @@
     </button>
   </div>
 
-  @if (loading) {
+  @if (loading()) {
     <app-spinner size="large" message="Loading tasks..."></app-spinner>
   }
 
-  @if (error && !loading) {
+  @if (error() && !loading()) {
     <div class="error-container">
       <span class="error-icon">⚠️</span>
-      <p class="error-message">{{ error }}</p>
-      <button class="btn-retry" (click)="loadTasks()">
+      <p class="error-message">{{ error() }}</p>
+      <button class="btn-retry" (click)="tasksRes.reload()">
         <span>🔄</span>
         Retry
       </button>
     </div>
   }
 
-  @if (!loading && !error) {
+  @if (!loading() && !error()) {
     <div class="kanban-board">
       <div class="kanban-column todo-column">
         <div class="column-header">
@@ -30,11 +30,11 @@
             <span class="column-icon">📝</span>
             <h2>{{ getStatusLabel(TaskStatus.TODO) }}</h2>
           </div>
-          <span class="task-count">{{ todoTasks.length }}</span>
+          <span class="task-count">{{ todoTasks().length }}</span>
         </div>
         <div class="column-content">
-          @if (todoTasks.length > 0) {
-            @for (task of todoTasks; track task.id) {
+          @if (todoTasks().length > 0) {
+            @for (task of todoTasks(); track task.id) {
               <div class="task-card" (click)="onViewTask(task.id!)">
                 <div class="task-header">
                   <h3 class="task-title">{{ task.title }}</h3>
@@ -89,11 +89,11 @@
             <span class="column-icon">⚙️</span>
             <h2>{{ getStatusLabel(TaskStatus.IN_PROGRESS) }}</h2>
           </div>
-          <span class="task-count">{{ inProgressTasks.length }}</span>
+          <span class="task-count">{{ inProgressTasks().length }}</span>
         </div>
         <div class="column-content">
-          @if (inProgressTasks.length > 0) {
-            @for (task of inProgressTasks; track task.id) {
+          @if (inProgressTasks().length > 0) {
+            @for (task of inProgressTasks(); track task.id) {
               <div class="task-card" (click)="onViewTask(task.id!)">
                 <div class="task-header">
                   <h3 class="task-title">{{ task.title }}</h3>
@@ -154,11 +154,11 @@
             <span class="column-icon">✅</span>
             <h2>{{ getStatusLabel(TaskStatus.DONE) }}</h2>
           </div>
-          <span class="task-count">{{ doneTasks.length }}</span>
+          <span class="task-count">{{ doneTasks().length }}</span>
         </div>
         <div class="column-content">
-          @if (doneTasks.length > 0) {
-            @for (task of doneTasks; track task.id) {
+          @if (doneTasks().length > 0) {
+            @for (task of doneTasks(); track task.id) {
               <div class="task-card" (click)="onViewTask(task.id!)">
                 <div class="task-header">
                   <h3 class="task-title">{{ task.title }}</h3>

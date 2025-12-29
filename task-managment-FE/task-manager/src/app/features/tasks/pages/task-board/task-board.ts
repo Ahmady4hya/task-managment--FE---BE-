@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+
 import { TaskService } from '../../../../core/services/task.service';
 import { Task, TaskStatus } from '../../../projects/models/task.model';
 import { SpinnerComponent } from '../../../../shared/ui-components/spinner/spinner';
@@ -12,49 +14,40 @@ import { SpinnerComponent } from '../../../../shared/ui-components/spinner/spinn
   templateUrl: './task-board.html',
   styleUrls: ['./task-board.scss']
 })
-export class TaskBoardComponent implements OnInit {
-  tasks: Task[] = [];
-  loading = false;
-  error: string | null = null;
-
-  todoTasks: Task[] = [];
-  inProgressTasks: Task[] = [];
-  doneTasks: Task[] = [];
+export class TaskBoardComponent {
+  private taskService = inject(TaskService);
+  private router = inject(Router);
 
   TaskStatus = TaskStatus;
 
-  constructor(
-    private taskService: TaskService,
-    private router: Router
-  ) {}
+  tasksRes = resource({
+    loader: () => firstValueFrom(this.taskService.getAllTasks())
+  });
 
-  ngOnInit(): void {
-    this.loadTasks();
-  }
+  
+  tasks = computed(() => this.tasksRes.value() ?? []);
+  loading = computed(() => this.tasksRes.isLoading());
+  error = computed(() => this.tasksRes.error());
 
-  loadTasks(): void {
-    this.loading = true;
-    this.error = null;
+  
+  grouped = computed(() => {
+    const t = this.tasks();
+    return {
+      todo: t.filter(x => x.status === TaskStatus.TODO),
+      inProgress: t.filter(x => x.status === TaskStatus.IN_PROGRESS),
+      done: t.filter(x => x.status === TaskStatus.DONE),
+    };
+  });
 
-    this.taskService.getAllTasks().subscribe({
-      next: (tasks) => {
-        this.tasks = tasks;
-        this.organizeTasks();
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = 'Failed to load tasks. Please try again.';
-        this.loading = false;
-        console.error('Error loading tasks:', err);
-      }
-    });
-  }
+  todoTasks = computed(() => this.grouped().todo);
+  inProgressTasks = computed(() => this.grouped().inProgress);
+  doneTasks = computed(() => this.grouped().done);
 
-  organizeTasks(): void {
-    this.todoTasks = this.tasks.filter(task => task.status === TaskStatus.TODO);
-    this.inProgressTasks = this.tasks.filter(task => task.status === TaskStatus.IN_PROGRESS);
-    this.doneTasks = this.tasks.filter(task => task.status === TaskStatus.DONE);
-  }
+  counts = computed(() => ({
+    todo: this.todoTasks().length,
+    inProgress: this.inProgressTasks().length,
+    done: this.doneTasks().length
+  }));
 
   onCreateTask(): void {
     this.router.navigate(['/tasks', 'new']);
@@ -69,26 +62,24 @@ export class TaskBoardComponent implements OnInit {
   }
 
   onDeleteTask(taskId: number): void {
-    if (confirm('Are you sure you want to delete this task?')) {
-      this.taskService.deleteTask(taskId).subscribe({
-        next: () => {
-          this.loadTasks();
-        },
-        error: (err) => {
-          this.error = 'Failed to delete task. Please try again.';
-          console.error('Error deleting task:', err);
-        }
-      });
-    }
+    if (!confirm('Are you sure you want to delete this task?')) return;
+
+    this.taskService.deleteTask(taskId).subscribe({
+      next: () => {
+        this.tasksRes.reload();
+      },
+      error: (err) => {
+        console.error('Error deleting task:', err);
+      }
+    });
   }
 
   onStatusChange(taskId: number, newStatus: TaskStatus): void {
     this.taskService.updateTaskStatus(taskId, newStatus).subscribe({
       next: () => {
-        this.loadTasks();
+        this.tasksRes.reload();
       },
       error: (err) => {
-        this.error = 'Failed to update task status. Please try again.';
         console.error('Error updating task status:', err);
       }
     });
@@ -96,18 +87,10 @@ export class TaskBoardComponent implements OnInit {
 
   getStatusLabel(status: TaskStatus): string {
     switch (status) {
-      case TaskStatus.TODO:
-        return 'To Do';
-      case TaskStatus.IN_PROGRESS:
-        return 'In Progress';
-      case TaskStatus.DONE:
-        return 'Done';
-      default:
-        return status;
+      case TaskStatus.TODO: return 'To Do';
+      case TaskStatus.IN_PROGRESS: return 'In Progress';
+      case TaskStatus.DONE: return 'Done';
+      default: return status;
     }
-  }
-
-  getTaskCountByStatus(status: TaskStatus): number {
-    return this.tasks.filter(task => task.status === status).length;
   }
 }
